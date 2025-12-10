@@ -44,6 +44,13 @@
                     <li>Ask specific questions like “Explain polymorphism in simple words”</li>
                 </ul>
             </div>
+            <div class="hint-box" style="margin-top: 14px;">
+    <p class="hint-title">Uploaded topics</p>
+    <ul id="topicList" class="hint-list">
+        <li>No PDFs uploaded yet</li>
+    </ul>
+</div>
+
         </div>
 
         <!-- Right side: Chat -->
@@ -74,38 +81,56 @@
 
 <script>
     async function uploadPdfs(ev) {
-        ev.preventDefault();
-        const input = document.getElementById("pdfInput");
-        if (!input.files.length) {
-            showToast("Please select at least one PDF.", true);
+    ev.preventDefault();
+    const input = document.getElementById("pdfInput");
+    const formEl = document.getElementById("uploadForm");
+    if (!input.files.length) {
+        showToast("Please select at least one PDF.", true);
+        return;
+    }
+
+    const formData = new FormData();
+    for (let file of input.files) {
+        formData.append("pdfs", file);
+    }
+
+    try {
+        const res = await fetch("/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        if (!res.ok) {
+            showToast("Upload failed. Please try again.", true);
             return;
         }
 
-        const formData = new FormData();
-        for (let file of input.files) {
-            formData.append("pdfs", file);
-        }
+        const data = await res.json();
+        showToast(data.message || "PDFs uploaded and processed ✅");
 
-        try {
-            const res = await fetch("/upload", {
-                method: "POST",
-                body: formData
+        // ✅ Clear file input properly
+        formEl.reset();              // resets <input type="file">
+        // input.value = "";         // optional extra
+
+        // ✅ Update topics list in UI
+        const topicList = document.getElementById("topicList");
+        topicList.innerHTML = "";
+        if (data.files && data.files.length) {
+            data.files.forEach(name => {
+                const li = document.createElement("li");
+                // show without .pdf extension to look like a topic
+                li.textContent = name.replace(/\.pdf$/i, "");
+                topicList.appendChild(li);
             });
-
-            if (!res.ok) {
-                showToast("Upload failed. Please try again.", true);
-                return;
-            }
-
-            const text = await res.text();
-            showToast("PDFs uploaded and processed ✅");
-            // Optional: reset file input
-            input.value = "";
-        } catch (e) {
-            console.error(e);
-            showToast("Network error while uploading.", true);
+        } else {
+            topicList.innerHTML = "<li>No PDFs uploaded yet</li>";
         }
+    } catch (e) {
+        console.error(e);
+        showToast("Network error while uploading.", true);
     }
+}
+
 
     async function ask(ev) {
         ev.preventDefault();

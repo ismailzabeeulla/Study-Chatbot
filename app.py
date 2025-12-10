@@ -1,11 +1,12 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify  # add jsonify
 import os
 from rag_logic import load_pdf, load_online_data, ask_question
-
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "./uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+UPLOADED_FILES = []  # keep track of uploaded PDFs
 
 
 @app.route("/")
@@ -15,12 +16,25 @@ def index():
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
+    from werkzeug.utils import secure_filename
     files = request.files.getlist("pdfs")
+    new_files = []
+
     for file in files:
-        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+        if not file.filename:
+            continue
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(file_path)
         load_pdf(file_path)
-    return "PDFs uploaded and processed successfully!"
+        new_files.append(filename)
+        if filename not in UPLOADED_FILES:
+            UPLOADED_FILES.append(filename)
+
+    return jsonify({
+        "message": "PDFs uploaded and processed ✅",
+        "files": UPLOADED_FILES
+    })
 
 
 @app.route("/ask", methods=["POST"])
