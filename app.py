@@ -37,14 +37,3 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=port)
 
 
-def ask_question(question: str) -> str:
-    try:
-        # ... build prompt, etc.
-        response = client.chat.completions.create(
-            model="YOUR_MODEL_ID",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print("ERROR from Groq:", e)
-        return "Sorry, there was a problem talking to the AI model. Please try again in a moment."

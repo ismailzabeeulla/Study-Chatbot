@@ -1,68 +1,172 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Study Material Chatbot</title>
+    <title>Study Buddy AI Chatbot</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<div class="main-container">
+<div class="bg-gradient"></div>
 
-    <header>
-        <img src="/static/logo.png" class="logo">
-        <h2>Study Buddy AI Chatbot</h2>
-        <p class="subtitle">Upload your programming study notes & ask anything 👨‍💻📘</p>
+<div class="main-container glass">
+    <header class="header">
+        <div class="logo-row">
+            <img src="/static/logo.png" class="logo" alt="Logo">
+            <div>
+                <h1 class="title">Study Buddy</h1>
+                <p class="subtitle">Ask doubts from your own notes 📚</p>
+            </div>
+        </div>
     </header>
 
-    <div class="upload-box">
-        <form action="/upload" method="POST" enctype="multipart/form-data">
-            <label class="upload-label">Upload PDFs (Multiple Supported)</label>
-            <input type="file" name="pdfs" multiple class="file-input">
-            <button type="submit" class="upload-btn">Upload Study Material</button>
-        </form>
+    <div class="layout">
+        <!-- Left side: Upload & info -->
+        <div class="left-panel">
+            <h2 class="panel-title">Upload Study Material</h2>
+            <p class="panel-text">
+                Upload your programming notes (PDFs). The chatbot will use them to answer your questions.
+            </p>
+
+            <form id="uploadForm" onsubmit="uploadPdfs(event)" enctype="multipart/form-data">
+                <label class="upload-label">Select PDFs</label>
+                <input type="file" name="pdfs" multiple class="file-input" id="pdfInput">
+
+                <button type="submit" class="btn primary-btn">
+                    📤 Upload & Process
+                </button>
+            </form>
+
+            <div class="hint-box">
+                <p class="hint-title">Tips</p>
+                <ul class="hint-list">
+                    <li>Upload clear, typed notes for best results</li>
+                    <li>Multiple PDFs are supported</li>
+                    <li>Ask specific questions like “Explain polymorphism in simple words”</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right side: Chat -->
+        <div class="right-panel">
+            <h2 class="panel-title">Chat with your Notes</h2>
+
+            <div id="answerBox" class="chat-box">
+                <div class="bubble bot-msg">
+                    Hi 👋 I’m your Study Buddy.<br>
+                    Upload your PDFs on the left, then ask me anything about them!
+                </div>
+            </div>
+
+            <div class="chat-actions">
+                <form onsubmit="ask(event)" class="chat-form">
+                    <input id="question" type="text" placeholder="Ask your question here..." class="chat-input">
+                    <button type="submit" class="btn ask-btn">Ask</button>
+                </form>
+
+                <button onclick="clearChat()" class="btn clear-btn">Clear Chat</button>
+            </div>
+        </div>
     </div>
-
-    <div class="chat-container">
-        <div id="answerBox"></div>
-
-        <div class="chat-actions">
-    <form onsubmit="ask(event)" class="chat-form">
-        <input id="question" type="text" placeholder="Ask your question here..." class="chat-input">
-        <button type="submit" class="ask-btn">Ask</button>
-    </form>
-
-    <button onclick="clearChat()" class="clear-btn">Clear Chat</button>
 </div>
 
-    </div>
-
-</div>
-
+<!-- Toast notification -->
+<div id="toast" class="toast hidden"></div>
 
 <script>
+    async function uploadPdfs(ev) {
+        ev.preventDefault();
+        const input = document.getElementById("pdfInput");
+        if (!input.files.length) {
+            showToast("Please select at least one PDF.", true);
+            return;
+        }
+
+        const formData = new FormData();
+        for (let file of input.files) {
+            formData.append("pdfs", file);
+        }
+
+        try {
+            const res = await fetch("/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) {
+                showToast("Upload failed. Please try again.", true);
+                return;
+            }
+
+            const text = await res.text();
+            showToast("PDFs uploaded and processed ✅");
+            // Optional: reset file input
+            input.value = "";
+        } catch (e) {
+            console.error(e);
+            showToast("Network error while uploading.", true);
+        }
+    }
+
     async function ask(ev) {
         ev.preventDefault();
-        let q = document.getElementById("question").value;
+        let q = document.getElementById("question").value.trim();
+        if (!q) return;
+
         let form = new FormData();
         form.append("question", q);
 
-        let res = await fetch("/ask", { method: "POST", body: form });
-        let ans = await res.text();
-
         let box = document.getElementById("answerBox");
-
-        box.innerHTML += `
-            <div class="bubble user-msg">${q}</div>
-            <div class="bubble bot-msg">${ans}</div>
-        `;
-
+        // Add user message
+        box.innerHTML += `<div class="bubble user-msg">${q}</div>`;
         document.getElementById("question").value = "";
-        box.scrollTop = box.scrollHeight;
-    }
-    function clearChat() {
-    document.getElementById("answerBox").innerHTML = "";
-}
 
+        // Add typing indicator
+        const typingId = "typing-" + Date.now();
+        box.innerHTML += `<div id="${typingId}" class="bubble bot-msg typing">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>`;
+        box.scrollTop = box.scrollHeight;
+
+        try {
+            let res = await fetch("/ask", { method: "POST", body: form });
+            let ans = await res.text();
+
+            document.getElementById(typingId).remove();
+            box.innerHTML += `<div class="bubble bot-msg">${ans.replace(/\n/g, "<br>")}</div>`;
+            box.scrollTop = box.scrollHeight;
+        } catch (e) {
+            document.getElementById(typingId).remove();
+            box.innerHTML += `<div class="bubble bot-msg error-msg">
+                Sorry, something went wrong. Please try again.
+            </div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+    }
+
+    function clearChat() {
+        const box = document.getElementById("answerBox");
+        box.innerHTML = `<div class="bubble bot-msg">
+            Chat cleared 🧹<br>Ask a new question anytime!
+        </div>`;
+    }
+
+    function showToast(message, isError = false) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.remove("hidden");
+        toast.classList.remove("error");
+        if (isError) toast.classList.add("error");
+
+        // Trigger reflow for animation restart
+        void toast.offsetWidth;
+
+        toast.classList.add("show");
+
+        setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.classList.add("hidden"), 200);
+        }, 2500);
+    }
 </script>
 
 </body>
