@@ -1,0 +1,143 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #e8edf5;
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+}
+
+.main-container {
+    width: 700px;
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.18);
+}
+
+.logo {
+    width: 65px;
+    margin-bottom: 10px;
+}
+
+header {
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 20px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 14px;
+}
+
+.upload-box {
+    margin-top: 20px;
+}
+
+.upload-label {
+    font-weight: bold;
+    display: block;
+}
+
+.file-input {
+    padding: 8px;
+    margin-top: 6px;
+}
+
+.upload-btn {
+    display: block;
+    background-color: #3b82f6;
+    margin-top: 10px;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.upload-btn:hover {
+    background-color: #1d4ed8;
+}
+
+.chat-container {
+    margin-top: 30px;
+}
+
+#answerBox {
+    height: 250px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.chat-form {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #aaa;
+}
+
+.ask-btn {
+    width: 100px;
+    background-color: #14a44d;
+    border: none;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.ask-btn:hover {
+    background-color: #0e7939;
+}
+
+.bubble {
+    padding: 10px 14px;
+    margin-top: 8px;
+    border-radius: 12px;
+    width: fit-content;
+    max-width: 80%;
+    font-size: 15px;
+}
+
+.user-msg {
+    background-color: #2563eb;
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+.bot-msg {
+    background-color: #e5e7eb;
+    color: #000;
+}
+
+.clear-btn {
+    background-color: #dc3545;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.clear-btn:hover {
+    background-color: #b72c39;
+}
+
+.chat-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
