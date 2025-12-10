@@ -1,7 +1,6 @@
 flask
 groq
-chromadb
-sentence-transformers
 pymupdf
 requests
 beautifulsoup4
+scikit-learn

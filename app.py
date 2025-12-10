@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 import os
-from rag_logic import load_pdf, ask_question
+from rag_logic import load_pdf, load_online_data, ask_question
+
 
 app = Flask(__name__)
 UPLOAD_FOLDER = "./uploads"
