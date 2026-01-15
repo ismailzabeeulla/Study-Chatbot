@@ -1,6 +1,6 @@
 flask
 groq
 pymupdf
+scikit-learn
 requests
 beautifulsoup4
-scikit-learn
