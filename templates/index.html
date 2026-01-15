@@ -1,197 +1,131 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Study Buddy AI Chatbot</title>
+    <meta charset="UTF-8">
+    <title>Study Buddy AI</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<div class="bg-gradient"></div>
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="/static/logo.png" alt="logo">
+            <h2>Study Buddy</h2>
+        </div>
 
-<div class="main-container glass">
-    <header class="header">
-        <div class="logo-row">
-            <img src="/static/logo.png" class="logo" alt="Logo">
-            <div>
-                <h1 class="title">Study Buddy</h1>
-                <p class="subtitle">Ask doubts from your own notes 📚</p>
+        <p class="tagline">Your notes. Your answers.</p>
+
+        <form id="uploadForm" onsubmit="uploadPdfs(event)">
+            <label class="upload-btn">
+                📄 Upload PDFs
+                <input type="file" id="pdfInput" name="pdfs" multiple hidden>
+            </label>
+            <button class="process-btn" type="submit">Process Notes</button>
+        </form>
+
+        <div class="topics">
+            <h4>📌 Topics</h4>
+            <ul id="topicList">
+                <li>No topics yet</li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main chat area -->
+    <main class="chat-area">
+        <header class="chat-header">
+            <h1>Ask your study questions</h1>
+            <p>Short answers • Easy language • From your notes</p>
+        </header>
+
+        <div id="chatBox" class="chat-box">
+            <div class="msg bot">
+                👋 Hi! Upload your PDFs and start asking questions.
             </div>
         </div>
-    </header>
 
-    <div class="layout">
-        <!-- Left side: Upload & info -->
-        <div class="left-panel">
-            <h2 class="panel-title">Upload Study Material</h2>
-            <p class="panel-text">
-                Upload your programming notes (PDFs). The chatbot will use them to answer your questions.
-            </p>
-
-            <form id="uploadForm" onsubmit="uploadPdfs(event)" enctype="multipart/form-data">
-                <label class="upload-label">Select PDFs</label>
-                <input type="file" name="pdfs" multiple class="file-input" id="pdfInput">
-
-                <button type="submit" class="btn primary-btn">
-                    📤 Upload & Process
-                </button>
+        <div class="chat-input-area">
+            <form onsubmit="ask(event)">
+                <input id="question" type="text" placeholder="Type your question here...">
+                <button type="submit">Ask</button>
             </form>
-
-            <div class="hint-box">
-                <p class="hint-title">Tips</p>
-                <ul class="hint-list">
-                    <li>Upload clear, typed notes for best results</li>
-                    <li>Multiple PDFs are supported</li>
-                    <li>Ask specific questions like “Explain polymorphism in simple words”</li>
-                </ul>
-            </div>
-            <div class="hint-box" style="margin-top: 14px;">
-    <p class="hint-title">Uploaded topics</p>
-    <ul id="topicList" class="hint-list">
-        <li>No PDFs uploaded yet</li>
-    </ul>
+            <button class="clear-btn" onclick="clearChat()">Clear</button>
+        </div>
+    </main>
 </div>
 
-        </div>
-
-        <!-- Right side: Chat -->
-        <div class="right-panel">
-            <h2 class="panel-title">Chat with your Notes</h2>
-
-            <div id="answerBox" class="chat-box">
-                <div class="bubble bot-msg">
-                    Hi 👋 I’m your Study Buddy.<br>
-                    Upload your PDFs on the left, then ask me anything about them!
-                </div>
-            </div>
-
-            <div class="chat-actions">
-                <form onsubmit="ask(event)" class="chat-form">
-                    <input id="question" type="text" placeholder="Ask your question here..." class="chat-input">
-                    <button type="submit" class="btn ask-btn">Ask</button>
-                </form>
-
-                <button onclick="clearChat()" class="btn clear-btn">Clear Chat</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Toast notification -->
-<div id="toast" class="toast hidden"></div>
+<div id="toast" class="toast"></div>
 
 <script>
-    async function uploadPdfs(ev) {
-    ev.preventDefault();
+async function uploadPdfs(e) {
+    e.preventDefault();
     const input = document.getElementById("pdfInput");
-    const formEl = document.getElementById("uploadForm");
     if (!input.files.length) {
-        showToast("Please select at least one PDF.", true);
+        showToast("Please select PDFs first", true);
         return;
     }
 
     const formData = new FormData();
-    for (let file of input.files) {
-        formData.append("pdfs", file);
-    }
+    for (let f of input.files) formData.append("pdfs", f);
 
-    try {
-        const res = await fetch("/upload", {
-            method: "POST",
-            body: formData
-        });
+    const res = await fetch("/upload", { method: "POST", body: formData });
+    const data = await res.json();
 
-        if (!res.ok) {
-            showToast("Upload failed. Please try again.", true);
-            return;
-        }
+    document.getElementById("uploadForm").reset();
+    showToast(data.message);
 
-        const data = await res.json();
-        showToast(data.message || "PDFs uploaded and processed ✅");
-
-        // ✅ Clear file input properly
-        formEl.reset();              // resets <input type="file">
-        // input.value = "";         // optional extra
-
-        // ✅ Update topics list in UI
-        const topicList = document.getElementById("topicList");
-        topicList.innerHTML = "";
-        if (data.files && data.files.length) {
-            data.files.forEach(name => {
-                const li = document.createElement("li");
-                // show without .pdf extension to look like a topic
-                li.textContent = name.replace(/\.pdf$/i, "");
-                topicList.appendChild(li);
-            });
-        } else {
-            topicList.innerHTML = "<li>No PDFs uploaded yet</li>";
-        }
-    } catch (e) {
-        console.error(e);
-        showToast("Network error while uploading.", true);
-    }
+    const list = document.getElementById("topicList");
+    list.innerHTML = "";
+    data.files.forEach(f => {
+        const li = document.createElement("li");
+        li.textContent = f.replace(/\.pdf$/i, "");
+        list.appendChild(li);
+    });
 }
 
+async function ask(e) {
+    e.preventDefault();
+    const qInput = document.getElementById("question");
+    const q = qInput.value.trim();
+    if (!q) return;
 
-    async function ask(ev) {
-        ev.preventDefault();
-        let q = document.getElementById("question").value.trim();
-        if (!q) return;
+    const box = document.getElementById("chatBox");
+    box.innerHTML += `<div class="msg user">${q}</div>`;
+    qInput.value = "";
 
-        let form = new FormData();
-        form.append("question", q);
+    const typing = document.createElement("div");
+    typing.className = "msg bot";
+    typing.textContent = "Thinking...";
+    box.appendChild(typing);
+    box.scrollTop = box.scrollHeight;
 
-        let box = document.getElementById("answerBox");
-        // Add user message
-        box.innerHTML += `<div class="bubble user-msg">${q}</div>`;
-        document.getElementById("question").value = "";
+    const form = new FormData();
+    form.append("question", q);
 
-        // Add typing indicator
-        const typingId = "typing-" + Date.now();
-        box.innerHTML += `<div id="${typingId}" class="bubble bot-msg typing">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        </div>`;
-        box.scrollTop = box.scrollHeight;
-
-        try {
-            let res = await fetch("/ask", { method: "POST", body: form });
-            let ans = await res.text();
-
-            document.getElementById(typingId).remove();
-            box.innerHTML += `<div class="bubble bot-msg">${ans.replace(/\n/g, "<br>")}</div>`;
-            box.scrollTop = box.scrollHeight;
-        } catch (e) {
-            document.getElementById(typingId).remove();
-            box.innerHTML += `<div class="bubble bot-msg error-msg">
-                Sorry, something went wrong. Please try again.
-            </div>`;
-            box.scrollTop = box.scrollHeight;
-        }
+    try {
+        const res = await fetch("/ask", { method: "POST", body: form });
+        const ans = await res.text();
+        typing.remove();
+        box.innerHTML += `<div class="msg bot">${ans.replace(/\n/g,"<br>")}</div>`;
+    } catch {
+        typing.textContent = "Error getting response";
     }
+    box.scrollTop = box.scrollHeight;
+}
 
-    function clearChat() {
-        const box = document.getElementById("answerBox");
-        box.innerHTML = `<div class="bubble bot-msg">
-            Chat cleared 🧹<br>Ask a new question anytime!
-        </div>`;
-    }
+function clearChat() {
+    document.getElementById("chatBox").innerHTML =
+        `<div class="msg bot">Chat cleared. Ask something new 😊</div>`;
+}
 
-    function showToast(message, isError = false) {
-        const toast = document.getElementById("toast");
-        toast.textContent = message;
-        toast.classList.remove("hidden");
-        toast.classList.remove("error");
-        if (isError) toast.classList.add("error");
-
-        // Trigger reflow for animation restart
-        void toast.offsetWidth;
-
-        toast.classList.add("show");
-
-        setTimeout(() => {
-            toast.classList.remove("show");
-            setTimeout(() => toast.classList.add("hidden"), 200);
-        }, 2500);
-    }
+function showToast(msg, error=false) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show" + (error ? " error" : "");
+    setTimeout(() => t.className = "toast", 2500);
+}
 </script>
 
 </body>
